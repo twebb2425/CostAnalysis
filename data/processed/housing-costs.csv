@@ -1,0 +1,53 @@
+geography_type,state_name,state_code,year,median_gross_rent
+State,Alabama,01,2024,1007
+State,Alaska,02,2024,1419
+State,Arizona,04,2024,1543
+State,Arkansas,05,2024,947
+State,California,06,2024,2036
+State,Colorado,08,2024,1761
+State,Connecticut,09,2024,1488
+State,Delaware,10,2024,1401
+State,District of Columbia,11,2024,1954
+State,Florida,12,2024,1669
+State,Georgia,13,2024,1393
+State,Hawaii,15,2024,1971
+State,Idaho,16,2024,1238
+State,Illinois,17,2024,1274
+State,Indiana,18,2024,1062
+State,Iowa,19,2024,972
+State,Kansas,20,2024,1060
+State,Kentucky,21,2024,967
+State,Louisiana,22,2024,1064
+State,Maine,23,2024,1139
+State,Maryland,24,2024,1705
+State,Massachusetts,25,2024,1762
+State,Michigan,26,2024,1129
+State,Minnesota,27,2024,1280
+State,Mississippi,28,2024,954
+State,Missouri,29,2024,1033
+State,Montana,30,2024,1081
+State,Nebraska,31,2024,1072
+State,Nevada,32,2024,1597
+State,New Hampshire,33,2024,1491
+State,New Jersey,34,2024,1720
+State,New Mexico,35,2024,1067
+State,New York,36,2024,1621
+State,North Carolina,37,2024,1228
+State,North Dakota,38,2024,954
+State,Ohio,39,2024,1034
+State,Oklahoma,40,2024,1014
+State,Oregon,41,2024,1525
+State,Pennsylvania,42,2024,1209
+State,Rhode Island,44,2024,1342
+State,South Carolina,45,2024,1180
+State,South Dakota,46,2024,946
+State,Tennessee,47,2024,1189
+State,Texas,48,2024,1403
+State,Utah,49,2024,1496
+State,Vermont,50,2024,1234
+State,Virginia,51,2024,1579
+State,Washington,53,2024,1760
+State,West Virginia,54,2024,872
+State,Wisconsin,55,2024,1087
+State,Wyoming,56,2024,992
+State,Puerto Rico,72,2024,578
