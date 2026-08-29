@@ -1,111 +1,101 @@
-# Import the subprocess module so Python can run other Python scripts.
-import subprocess
+# Imports the reusable rent extraction function.
+from src.extract.extract_rent import extract_housing_data
 
-# Import the sys module so we can use the active virtual environment's Python interpreter.
-import sys
+# Imports the reusable rent transformation function.
+from src.transform.transform_rent import transform_housing_data
 
-# Import the logging module so we can record pipeline activity.
-import logging
+# Imports the reusable rent loading function.
+from src.load.load_rent import load_rent_data
 
-# Import Path so we can build file paths safely.
-from pathlib import Path
+# Imports the reusable Zillow state home value extraction function.
+from src.extract.extract_home_values_state import extract_home_values_state
 
+# Imports the reusable Zillow state home value transformation function.
+from src.transform.transform_home_values_state import transform_home_values_state
 
-# Define the root directory of the project.
-PROJECT_ROOT = Path(__file__).resolve().parent
+# Imports the reusable Zillow state home value loading function.
+from src.load.load_home_values_state import load_home_values_state
 
-# Define the directory where log files will be stored.
-LOG_DIR = PROJECT_ROOT / "logs"
-
-# Create the logs directory if it does not already exist.
-LOG_DIR.mkdir(exist_ok=True)
-
-# Define the full path to the pipeline log file.
-LOG_FILE = LOG_DIR / "pipeline.log"
+# Imports our reusable logging function.
+from src.utils.logging_utils import get_logger
 
 
-# Configure the logging system.
-logging.basicConfig(
-    # Record informational messages and anything more severe.
-    level=logging.INFO,
-
-    # Define how each log entry should appear.
-    format="%(asctime)s | %(levelname)s | %(message)s",
-
-    # Send logs to both the log file and the Terminal.
-    handlers=[
-        # Save log messages to the pipeline log file.
-        logging.FileHandler(LOG_FILE),
-
-        # Also display log messages in the Terminal.
-        logging.StreamHandler()
-    ]
-)
+# Creates a logger for the main CostAnalysis pipeline.
+logger = get_logger(__name__)
 
 
-# Define a function that runs one step of the pipeline.
-def run_step(script_path, step_name):
-    # Record that the pipeline step is starting.
-    logging.info(f"Starting {step_name} step.")
+# Defines the reusable rent ETL pipeline.
+def run_rent_pipeline():
 
-    # Build the full path to the Python script.
-    full_script_path = PROJECT_ROOT / script_path
+    # Records that the rent ETL pipeline is starting.
+    logger.info("Starting rent ETL pipeline.")
 
-    # Run the Python script using the active Python interpreter.
-    result = subprocess.run(
-        # Pass the current Python interpreter and target script.
-        [sys.executable, str(full_script_path)],
+    # Extracts the latest available Census rent data and returns its Census year.
+    _, census_year = extract_housing_data()
 
-        # Capture standard output from the script.
-        capture_output=True,
+    # Transforms the raw rent data using the Census year detected during extraction.
+    transform_housing_data(census_year)
 
-        # Capture output as normal text instead of bytes.
-        text=True
-    )
+    # Loads the processed rent data into PostgreSQL.
+    load_rent_data()
 
-    # Check whether the script produced normal output.
-    if result.stdout:
-        # Record the script's normal output.
-        logging.info(result.stdout.strip())
-
-    # Check whether the script produced error output.
-    if result.stderr:
-        # Record the script's error output.
-        logging.error(result.stderr.strip())
-
-    # Check whether the script completed successfully.
-    if result.returncode == 0:
-        # Record that the step completed successfully.
-        logging.info(f"{step_name} step completed successfully.")
-
-    # Run this block if the step failed.
-    else:
-        # Record that the step failed.
-        logging.error(f"{step_name} step failed.")
-
-        # Stop the pipeline using the failed script's return code.
-        sys.exit(result.returncode)
+    # Records that the rent ETL pipeline completed successfully.
+    logger.info("Rent ETL pipeline completed successfully.")
 
 
-# Define the main function that controls the pipeline.
-def main():
-    # Record that the full pipeline is starting.
-    logging.info("Starting CostAnalysis data pipeline.")
+# Defines the reusable state home value ETL pipeline.
+def run_home_values_pipeline():
 
-    # Run the extraction step.
-    run_step("src/extract/extract_housing_data.py", "Extract")
+    # Records that the Zillow state home value ETL pipeline is starting.
+    logger.info("Starting state home value ETL pipeline.")
 
-    # Run the transformation step.
-    run_step("src/transform/transform_housing_data.py", "Transform")
+    # Downloads the latest Zillow state home value dataset and checks its freshness.
+    extract_home_values_state()
 
-    # Run the database load step.
-    run_step("src/load/load_rent_data.py", "Load")
+    # Transforms the raw Zillow state home value dataset into long format.
+    transform_home_values_state()
 
-    # Record that the entire pipeline completed successfully.
-    logging.info("CostAnalysis data pipeline completed successfully.")
+    # Loads the transformed Zillow state home values into PostgreSQL using an upsert.
+    load_home_values_state()
+
+    # Records that the Zillow state home value ETL pipeline completed successfully.
+    logger.info("State home value ETL pipeline completed successfully.")
 
 
-# Check whether this script is being executed directly.
+# Defines the main CostAnalysis pipeline that runs every dataset.
+def run_pipeline():
+
+    # Records that the complete CostAnalysis pipeline is starting.
+    logger.info("Starting complete CostAnalysis ETL pipeline.")
+
+    # Starts a protected block for the complete ETL workflow.
+    try:
+
+        # Runs the Census rent ETL pipeline.
+        run_rent_pipeline()
+
+        # Runs the Zillow state home value ETL pipeline.
+        run_home_values_pipeline()
+
+        # Records that every CostAnalysis ETL pipeline completed successfully.
+        logger.info(
+            "Complete CostAnalysis ETL pipeline completed successfully."
+        )
+
+    # Catches any error that occurs anywhere in the complete pipeline.
+    except Exception as error:
+
+        # Records the full error and traceback in the terminal and log file.
+        logger.exception(
+            f"CostAnalysis ETL pipeline failed: {error}"
+        )
+
+        # Raises the error again so automated systems can detect the failure.
+        raise
+
+
+# Runs the complete pipeline only when this file is executed directly.
 if __name__ == "__main__":
-    # Run the main pipeline function.
-    main()
+
+    # Calls the main CostAnalysis pipeline function.
+    run_pipeline()
