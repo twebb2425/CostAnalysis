@@ -1,147 +1,167 @@
-# Imports Path so we can build file paths that work across operating systems.
+# Imports Path so the project can build file paths that work on both macOS and GitHub Actions.
 from pathlib import Path
 
-# Imports requests so Python can download the Zillow CSV file.
-import requests
-
-# Imports Pandas so we can inspect the dates in the downloaded Zillow dataset.
+# Imports Pandas so we can inspect the Zillow CSV file.
 import pandas as pd
 
-# Imports our reusable logging function.
-from src.utils.logging_utils import get_logger
+# Imports Requests so we can download the Zillow dataset from the internet.
+import requests
 
-# Imports our reusable freshness check function.
+# Imports the reusable freshness check for Zillow home value data.
 from src.utils.freshness import check_for_new_home_value_month
 
-
-# Creates a logger for the state home value extraction module.
-logger = get_logger(__name__)
-
-
-# Finds the root folder of the CostAnalysis project.
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+# Imports the reusable project logger.
+from src.utils.logging_utils import get_logger
 
 
-# Builds the full path where the raw Zillow home value dataset will be saved.
-OUTPUT_PATH = (
+# Creates a logger specifically for this module.
+logger = get_logger(
+    __name__
+)
+
+
+# Finds the root directory of the CostAnalysis project.
+PROJECT_ROOT = Path(
+    __file__
+).resolve().parents[2]
+
+
+# Defines the directory where raw source files are stored.
+RAW_DATA_DIR = (
     PROJECT_ROOT
     / "data"
     / "raw"
+)
+
+
+# Defines the path where the raw Zillow CSV file will be saved.
+OUTPUT_PATH = (
+    RAW_DATA_DIR
     / "home_values_state_raw.csv"
 )
 
 
-# Stores the Zillow State ZHVI CSV download URL.
+# Defines the Zillow URL for state-level home value data.
 ZILLOW_URL = (
-    "https://files.zillowstatic.com/research/public_csvs/zhvi/"
-    "State_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv"
+    "https://files.zillowstatic.com/research/public_csvs/"
+    "zhvi/State_zhvi_uc_sfrcondo_tier_0.33_0.67_sm_sa_month.csv"
 )
 
 
-# Defines a reusable function that extracts state-level Zillow home value data.
+# Defines the function responsible for extracting Zillow state home value data.
 def extract_home_values_state():
 
-    # Records that the Zillow extraction process is starting.
+    # Records that the Zillow extraction process has started.
     logger.info(
         "Starting state home value extraction."
     )
 
-    # Sends a request to download the Zillow State ZHVI CSV file.
-    response = requests.get(
-        ZILLOW_URL,
-        timeout=30
+    # Creates the raw data directory if it does not already exist.
+    #
+    # This is especially important for GitHub Actions because each workflow
+    # starts on a fresh virtual machine and empty directories are not stored
+    # by Git.
+    RAW_DATA_DIR.mkdir(
+        parents=True,
+        exist_ok=True
     )
 
-    # Raises an error if Zillow returns an unsuccessful HTTP response.
+    # Downloads the current Zillow state home value dataset.
+    response = requests.get(
+        ZILLOW_URL,
+        timeout=60
+    )
+
+    # Raises an exception if Zillow returned an unsuccessful HTTP response.
     response.raise_for_status()
 
-    # Writes the downloaded CSV content directly to the raw data file.
+    # Writes the downloaded Zillow CSV file into the project's raw data directory.
     OUTPUT_PATH.write_bytes(
         response.content
     )
 
-    # Records where the raw Zillow dataset was saved.
+    # Records where the raw Zillow file was saved.
     logger.info(
         f"Raw state home value data saved to: {OUTPUT_PATH}"
     )
 
-    # Reads only the column names from the newly downloaded Zillow CSV file.
-    zillow_columns = pd.read_csv(
+    # Reads only the header row from the downloaded Zillow CSV file.
+    #
+    # We only need the column names at this stage because the Zillow reporting
+    # dates are stored as columns in the source dataset.
+    source_columns = pd.read_csv(
         OUTPUT_PATH,
         nrows=0
     ).columns
 
-    # Creates an empty list that will store valid Zillow monthly date columns.
-    date_columns = []
+    # Creates an empty list that will contain valid Zillow reporting dates.
+    source_dates = []
 
     # Loops through every column name in the Zillow dataset.
-    for column in zillow_columns:
+    for column in source_columns:
 
         # Attempts to convert the column name into a date.
         parsed_date = pd.to_datetime(
             column,
-            format="%Y-%m-%d",
             errors="coerce"
         )
 
-        # Checks whether the column name was successfully recognized as a date.
+        # Checks whether Pandas successfully recognized the column as a date.
         if not pd.isna(
             parsed_date
         ):
 
-            # Adds the valid monthly date to our list.
-            date_columns.append(
+            # Adds the valid reporting date to the list.
+            source_dates.append(
                 parsed_date
             )
 
-    # Checks whether Zillow provided any recognizable monthly date columns.
-    if not date_columns:
+    # Stops the pipeline if no reporting-date columns were found.
+    if not source_dates:
 
-        # Raises an error because the Zillow dataset structure may have changed.
+        # Raises an error because Zillow data cannot be evaluated without dates.
         raise ValueError(
-            "No valid monthly date columns were found in the Zillow dataset."
+            "No Zillow reporting dates were found in the source dataset."
         )
 
-    # Finds the newest monthly date available in the downloaded Zillow data.
+    # Finds the most recent reporting date available from Zillow.
     latest_source_date = max(
-        date_columns
+        source_dates
     )
 
-    # Records the newest date currently available from Zillow.
+    # Records the latest reporting date found in the Zillow source.
     logger.info(
         f"Latest Zillow source date: {latest_source_date.date()}."
     )
 
-    # Compares the newest Zillow source date with the newest date already in PostgreSQL.
-    new_month_detected = check_for_new_home_value_month(
+    # Compares Zillow's newest reporting date against the newest date
+    # currently stored in PostgreSQL.
+    new_home_value_data = check_for_new_home_value_month(
         latest_source_date
     )
 
-    # Checks whether Zillow has published a newer reporting month.
-    if new_month_detected:
+    # Checks whether Zillow has released a newer reporting month.
+    if not new_home_value_data:
 
-        # Records that the downloaded source contains a newly published month.
-        logger.info(
-            "A new Zillow reporting month is available for processing."
-        )
-
-        # Returns True so run_pipeline.py knows to continue the Zillow ETL process.
-        return True
-
-    # Handles the case where Zillow has not published a newer reporting month.
-    else:
-
-        # Records that no new reporting month was found.
+        # Records that no new Zillow reporting month needs to be processed.
         logger.info(
             "No new Zillow reporting month is currently available."
         )
 
-        # Returns False so run_pipeline.py knows to skip transformation and loading.
+        # Returns False so run_pipeline.py knows to skip transform and load.
         return False
 
+    # Records that a new Zillow reporting month has been detected.
+    logger.info(
+        "New Zillow reporting month detected."
+    )
 
-# Runs the extraction only when this file is executed directly.
+    # Returns True so run_pipeline.py knows to continue transform and load.
+    return True
+
+
+# Runs the extraction function only when this file is executed directly.
 if __name__ == "__main__":
 
-    # Calls the reusable Zillow state home value extraction function.
+    # Executes the Zillow state home value extraction process.
     extract_home_values_state()
