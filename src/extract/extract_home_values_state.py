@@ -23,7 +23,12 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 # Builds the full path where the raw Zillow home value dataset will be saved.
-OUTPUT_PATH = PROJECT_ROOT / "data" / "raw" / "home_values_state_raw.csv"
+OUTPUT_PATH = (
+    PROJECT_ROOT
+    / "data"
+    / "raw"
+    / "home_values_state_raw.csv"
+)
 
 
 # Stores the Zillow State ZHVI CSV download URL.
@@ -37,7 +42,9 @@ ZILLOW_URL = (
 def extract_home_values_state():
 
     # Records that the Zillow extraction process is starting.
-    logger.info("Starting state home value extraction.")
+    logger.info(
+        "Starting state home value extraction."
+    )
 
     # Sends a request to download the Zillow State ZHVI CSV file.
     response = requests.get(
@@ -49,7 +56,9 @@ def extract_home_values_state():
     response.raise_for_status()
 
     # Writes the downloaded CSV content directly to the raw data file.
-    OUTPUT_PATH.write_bytes(response.content)
+    OUTPUT_PATH.write_bytes(
+        response.content
+    )
 
     # Records where the raw Zillow dataset was saved.
     logger.info(
@@ -76,10 +85,14 @@ def extract_home_values_state():
         )
 
         # Checks whether the column name was successfully recognized as a date.
-        if not pd.isna(parsed_date):
+        if not pd.isna(
+            parsed_date
+        ):
 
             # Adds the valid monthly date to our list.
-            date_columns.append(parsed_date)
+            date_columns.append(
+                parsed_date
+            )
 
     # Checks whether Zillow provided any recognizable monthly date columns.
     if not date_columns:
@@ -89,8 +102,10 @@ def extract_home_values_state():
             "No valid monthly date columns were found in the Zillow dataset."
         )
 
-    # Finds the newest monthly date available in the newly downloaded Zillow data.
-    latest_source_date = max(date_columns)
+    # Finds the newest monthly date available in the downloaded Zillow data.
+    latest_source_date = max(
+        date_columns
+    )
 
     # Records the newest date currently available from Zillow.
     logger.info(
@@ -110,6 +125,9 @@ def extract_home_values_state():
             "A new Zillow reporting month is available for processing."
         )
 
+        # Returns True so run_pipeline.py knows to continue the Zillow ETL process.
+        return True
+
     # Handles the case where Zillow has not published a newer reporting month.
     else:
 
@@ -118,8 +136,8 @@ def extract_home_values_state():
             "No new Zillow reporting month is currently available."
         )
 
-    # Returns the raw file path so other modules can reuse it later.
-    return OUTPUT_PATH
+        # Returns False so run_pipeline.py knows to skip transformation and loading.
+        return False
 
 
 # Runs the extraction only when this file is executed directly.

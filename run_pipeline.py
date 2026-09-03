@@ -28,45 +28,89 @@ logger = get_logger(__name__)
 def run_rent_pipeline():
 
     # Records that the rent ETL pipeline is starting.
-    logger.info("Starting rent ETL pipeline.")
+    logger.info(
+        "Starting rent ETL pipeline."
+    )
 
-    # Extracts the latest available Census rent data and returns its Census year.
-    _, census_year = extract_housing_data()
+    # Checks Census for the latest ACS year and stores whether new rent data exists.
+    _, census_year, new_rent_data = extract_housing_data()
 
-    # Transforms the raw rent data using the Census year detected during extraction.
-    transform_housing_data(census_year)
+    # Checks whether Census has published a newer ACS rent dataset.
+    if new_rent_data:
 
-    # Loads the processed rent data into PostgreSQL.
-    load_rent_data()
+        # Records that the rent pipeline will continue.
+        logger.info(
+            "New Census rent data detected. Continuing rent ETL pipeline."
+        )
 
-    # Records that the rent ETL pipeline completed successfully.
-    logger.info("Rent ETL pipeline completed successfully.")
+        # Transforms the raw rent data using the Census year detected during extraction.
+        transform_housing_data(
+            census_year
+        )
+
+        # Loads the processed rent data into PostgreSQL.
+        load_rent_data()
+
+        # Records that the rent ETL pipeline completed successfully.
+        logger.info(
+            "Rent ETL pipeline completed successfully."
+        )
+
+    # Handles the case where Census has not published a newer ACS dataset.
+    else:
+
+        # Records that the remaining rent ETL steps are being skipped.
+        logger.info(
+            "Rent ETL pipeline skipped because no new Census data is available."
+        )
 
 
 # Defines the reusable state home value ETL pipeline.
 def run_home_values_pipeline():
 
     # Records that the Zillow state home value ETL pipeline is starting.
-    logger.info("Starting state home value ETL pipeline.")
+    logger.info(
+        "Starting state home value ETL pipeline."
+    )
 
-    # Downloads the latest Zillow state home value dataset and checks its freshness.
-    extract_home_values_state()
+    # Downloads the latest Zillow dataset and returns True if a new month is available.
+    new_home_value_data = extract_home_values_state()
 
-    # Transforms the raw Zillow state home value dataset into long format.
-    transform_home_values_state()
+    # Checks whether Zillow has published a newer reporting month.
+    if new_home_value_data:
 
-    # Loads the transformed Zillow state home values into PostgreSQL using an upsert.
-    load_home_values_state()
+        # Records that the Zillow pipeline will continue.
+        logger.info(
+            "New Zillow data detected. Continuing state home value ETL pipeline."
+        )
 
-    # Records that the Zillow state home value ETL pipeline completed successfully.
-    logger.info("State home value ETL pipeline completed successfully.")
+        # Transforms the raw Zillow state home value dataset into long format.
+        transform_home_values_state()
+
+        # Loads the transformed Zillow state home values into PostgreSQL using an upsert.
+        load_home_values_state()
+
+        # Records that the Zillow state home value ETL pipeline completed successfully.
+        logger.info(
+            "State home value ETL pipeline completed successfully."
+        )
+
+    # Handles the case where Zillow has not published a newer reporting month.
+    else:
+
+        # Records that the remaining Zillow ETL steps are being skipped.
+        logger.info(
+            "State home value ETL pipeline skipped because no new Zillow data is available."
+        )
 
 
 # Defines the main CostAnalysis pipeline that runs every dataset.
 def run_pipeline():
 
     # Records that the complete CostAnalysis pipeline is starting.
-    logger.info("Starting complete CostAnalysis ETL pipeline.")
+    logger.info(
+        "Starting complete CostAnalysis ETL pipeline."
+    )
 
     # Starts a protected block for the complete ETL workflow.
     try:
