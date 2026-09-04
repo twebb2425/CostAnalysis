@@ -177,6 +177,8 @@ Managing application secrets
 Creating scheduled CI/CD workflows
 Debugging differences between local and cloud execution environments
 Handling unreliable external APIs
+
+
 Future Improvements
 Potential future enhancements include:
 Additional cost-of-living datasets
