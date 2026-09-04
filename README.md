@@ -17,7 +17,7 @@ The production database is hosted in Supabase PostgreSQL, while GitHub Actions h
 
 ## Architecture
 
-```mermaid
+
 flowchart TD
 
     A[Census ACS API] --> C[Python Extract Layer]
@@ -177,7 +177,6 @@ Managing application secrets
 Creating scheduled CI/CD workflows
 Debugging differences between local and cloud execution environments
 Handling unreliable external APIs
-
 
 Future Improvements
 Potential future enhancements include:
