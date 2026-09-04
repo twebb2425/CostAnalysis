@@ -35,7 +35,7 @@ flowchart TD
 
     J[GitHub Actions] --> C
 
-Pipeline Workflow
+## Pipeline Workflow
 Connect to the external data source.
 Identify the most recent reporting period available.
 Query PostgreSQL for the latest reporting period already stored.
@@ -47,7 +47,7 @@ Validate the transformed data.
 Load the records into PostgreSQL.
 Log pipeline activity for troubleshooting and monitoring.
 
-Data Sources
+## Data Sources
 U.S. Census ACS
 The Census pipeline retrieves state-level Median Gross Rent from the American Community Survey 5-Year dataset.
 Current database reporting year:
@@ -61,67 +61,39 @@ January 2000 through July 2026
 16,269 records
 State-level monthly observations
 
-Technology Stack
-Programming
-Python 3.13
-Pandas
-Requests
-SQLAlchemy
-Psycopg
-python-dotenv
-Data Storage
-PostgreSQL
-Supabase
-DevOps / Automation
-Git
-GitHub
-GitHub Actions
-Scheduled workflow execution
-Repository Secrets
-Data Engineering Concepts
-ETL pipelines
-Data extraction
-Data transformation
-Data validation
-Incremental loading
-Data freshness detection
-Cloud databases
-Environment variables
-CI/CD
-Logging
-Retry handling
+## Technology Stack
+Programming,
+Python 3.13,
+Pandas,
+Requests,
+SQLAlchemy,
+Psycopg,
+python-dotenv,
+Data Storage,
+PostgreSQL,
+Supabase,
+DevOps / Automation,
+Git,
+GitHub,
+GitHub Actions,
+Scheduled workflow execution,
+Repository Secrets,
+Data Engineering Concepts,
+ETL pipelines,
+Data extraction,
+Data transformation,
+Data validation,
+Incremental loading,
+Data freshness detection,
+Cloud databases,
+Environment variables,
+CI/CD,
+Logging,
+Retry handling,
 Modular Python architecture
+ 
 
-CostAnalysis/
-├── .github/
-│   └── workflows/
-│       └── cost_analysis_pipeline.yml
-├── data/
-│   ├── raw/
-│   └── processed/
-├── logs/
-├── src/
-│   ├── extract/
-│   │   ├── extract_rent.py
-│   │   └── extract_home_values_state.py
-│   ├── transform/
-│   │   ├── transform_rent.py
-│   │   └── transform_home_values_state.py
-│   ├── load/
-│   │   ├── load_rent.py
-│   │   └── load_home_values_state.py
-│   └── utils/
-│       ├── database.py
-│       ├── freshness.py
-│       ├── loader.py
-│       ├── logging_utils.py
-│       └── validation.py
-├── migrate_to_supabase.py
-├── requirements.txt
-├── run_pipeline.py
-└── README.md
-
-Cloud Database
+## Cloud Database
 The production database is hosted using Supabase PostgreSQL.
 Database credentials are never stored directly in the repository. Connection information and API credentials are supplied through environment variables locally and GitHub Repository Secrets in the CI/CD environment.
 The primary production tables are:
@@ -134,7 +106,7 @@ Example:
 Latest Zillow source date: 2026-07-31
 Latest PostgreSQL date:    2026-07-31
 
-Result:
+## Result:
 No new Zillow month detected.
 Transform and load skipped.
 When a future dataset is released, the pipeline will automatically continue through the transformation, validation, and loading stages.
@@ -163,7 +135,8 @@ CENSUS_API_KEY=
 DATABASE_URL=
 Run the complete pipeline:
 python run_pipeline.py
-What I Learned
+
+## What I Learned
 This project began as a basic housing-cost analysis and evolved into an end-to-end data engineering pipeline.
 Key areas explored while building the project included:
 Designing modular ETL architecture
@@ -178,13 +151,13 @@ Creating scheduled CI/CD workflows
 Debugging differences between local and cloud execution environments
 Handling unreliable external APIs
 
-Future Improvements
+## Future Improvements
 Potential future enhancements include:
-Additional cost-of-living datasets
-Fuel price data
-City and ZIP-code level analysis
-Data quality testing
-Pipeline notifications
-Automated analytics dashboards
-Cloud-native deployment
+Additional cost-of-living datasets,
+Fuel price data,
+City and ZIP-code level analysis,
+Data quality testing,
+Pipeline notifications,
+Automated analytics dashboards,
+Cloud-native deployment,
 Additional CI/CD testing
