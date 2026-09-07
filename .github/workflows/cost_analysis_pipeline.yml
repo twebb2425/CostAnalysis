@@ -11,10 +11,8 @@ on:
   schedule:
 
     # Runs every Monday at 8:00 AM Eastern Time.
-    - cron: "0 8 * * 1"
+    - cron: "*/5 * * * *"
       timezone: "America/New_York"
-
-
 # Defines the jobs that GitHub Actions will execute.
 jobs:
 
