@@ -16,12 +16,16 @@ import os
 # Imports dotenv so we can load the local .env file.
 from dotenv import load_dotenv
 
-
-# Loads environment variables from the .env file.
+# Loads environment variables when running locally.
 load_dotenv(".env")
 
-# Reads the PostgreSQL connection string from the environment.
+# Looks for the database URL on the local computer first.
 database_url = os.getenv("DATABASE_URL")
+
+# If running on Streamlit Cloud, use the Streamlit secret instead.
+if not database_url:
+    database_url = st.secrets["DATABASE_URL"]
+
 
 # Converts the PostgreSQL URL so SQLAlchemy uses Psycopg 3.
 if database_url.startswith("postgresql://"):
