@@ -1,163 +1,127 @@
 # CostAnalysis
 
-An end-to-end data engineering project that collects, transforms, validates, and stores U.S. housing cost data using automated ETL pipelines, cloud PostgreSQL, and GitHub Actions.
+CostAnalysis is a housing data project I built to get hands-on experience with ETL pipelines, PostgreSQL, cloud databases, and workflow automation.
 
-## Project Overview
+The project pulls state-level housing data from the U.S. Census Bureau and Zillow, processes it with Python, stores it in a Supabase PostgreSQL database, and uses the data in a Streamlit dashboard.
 
-CostAnalysis was built to explore the engineering side of working with continuously updated public datasets.
+## Live Dashboard
 
-The project currently integrates two housing-related datasets:
+View the dashboard here:(https://costanalysis-app.streamlit.app)
+
+## What It Does
+
+The project currently uses two datasets:
 
 - U.S. Census ACS Median Gross Rent
 - Zillow Home Value Index (ZHVI)
 
-Rather than simply downloading and analyzing static CSV files, the project is designed as an automated data pipeline that checks source freshness, determines whether new data has been released, and only performs transformation and loading when an update is required.
+The Census data provides annual state-level median rent data, while Zillow provides monthly home value data going back to 2000.
 
-The production database is hosted in Supabase PostgreSQL, while GitHub Actions handles scheduled execution of the pipeline.
+Instead of downloading the data manually each time it changes, I built the pipeline to check whether a newer reporting period is available before processing anything.
 
-## Architecture
+If the database already contains the latest data, the pipeline skips the update. If new data is available, it extracts, transforms, validates, and loads the new dataset into PostgreSQL.
 
+## How It Works
 
-flowchart TD
+The basic flow is:
 
-    A[Census ACS API] --> C[Python Extract Layer]
-    B[Zillow Research Data] --> C
+Census ACS / Zillow  
+↓  
+Python extraction  
+↓  
+Freshness check  
+↓  
+Transformation and validation  
+↓  
+Supabase PostgreSQL  
+↓  
+Streamlit dashboard
 
-    C --> D[Freshness Checks]
+GitHub Actions is used to run the pipeline on a schedule, and it can also be triggered manually.
 
-    D -->|No New Data| E[Skip Processing]
-    D -->|New Data Available| F[Transform]
+## Dashboard
 
-    F --> G[Validation]
-    G --> H[Load]
+I built a Streamlit dashboard on top of the PostgreSQL data to make the results easier to explore.
 
-    H --> I[Supabase PostgreSQL]
+The dashboard allows users to select a state and view:
 
-    J[GitHub Actions] --> C
+- Median gross rent
+- Latest Zillow home value
+- Home value change since 2015
+- Home value history since 2015
+- National home value ranking
+- Comparison with other states
 
-## Pipeline Workflow
-Connect to the external data source.
-Identify the most recent reporting period available.
-Query PostgreSQL for the latest reporting period already stored.
-Compare the source and database.
-Skip processing when the database is current.
-Extract the complete dataset when new data is detected.
-Transform the source data into a standardized structure.
-Validate the transformed data.
-Load the records into PostgreSQL.
-Log pipeline activity for troubleshooting and monitoring.
+The dashboard queries the cloud database rather than reading directly from the project's CSV files.
 
-## Data Sources
-U.S. Census ACS
-The Census pipeline retrieves state-level Median Gross Rent from the American Community Survey 5-Year dataset.
-Current database reporting year:
-2024
-52 state-level records
+## Data
 
-Zillow Home Value Index
-The Zillow pipeline retrieves monthly state-level home value data from the Zillow Home Value Index.
-Current database coverage:
-January 2000 through July 2026
-16,269 records
-State-level monthly observations
+### Census ACS
 
-## Technology Stack
-Programming,
-Python 3.13,
-Pandas,
-Requests,
-SQLAlchemy,
-Psycopg,
-python-dotenv,
-Data Storage,
-PostgreSQL,
-Supabase,
-DevOps / Automation,
-Git,
-GitHub,
-GitHub Actions,
-Scheduled workflow execution,
-Repository Secrets,
-Data Engineering Concepts,
-ETL pipelines,
-Data extraction,
-Data transformation,
-Data validation,
-Incremental loading,
-Data freshness detection,
-Cloud databases,
-Environment variables,
-CI/CD,
-Logging,
-Retry handling,
-Modular Python architecture
- 
+The rent pipeline uses the American Community Survey 5-Year dataset and retrieves state-level Median Gross Rent.
 
-## Cloud Database
-The production database is hosted using Supabase PostgreSQL.
-Database credentials are never stored directly in the repository. Connection information and API credentials are supplied through environment variables locally and GitHub Repository Secrets in the CI/CD environment.
-The primary production tables are:
-housing_costs
-home_values_state
-Automated Freshness Checks
-A major goal of this project was avoiding unnecessary processing.
-Before performing transformation or loading, the pipeline compares the newest reporting period from each source against the newest value stored in PostgreSQL.
-Example:
-Latest Zillow source date: 2026-07-31
-Latest PostgreSQL date:    2026-07-31
+Current data:
 
-## Result:
-No new Zillow month detected.
-Transform and load skipped.
-When a future dataset is released, the pipeline will automatically continue through the transformation, validation, and loading stages.
-Reliability
-External APIs are not always immediately available.
-The Census extraction layer includes retry handling and increased request timeouts so temporary network or API issues do not immediately terminate the automated pipeline.
-The pipeline also creates required directories dynamically, allowing it to run successfully inside temporary GitHub Actions environments.
-CI/CD
-GitHub Actions executes the complete pipeline automatically on a scheduled basis.
-The workflow:
-Creates a clean Ubuntu environment.
-Checks out the repository.
-Installs Python.
-Installs project dependencies.
-Loads secured environment variables.
-Executes the complete ETL pipeline.
-Connects to the Supabase PostgreSQL database.
-Processes new data when available.
-The workflow can also be manually triggered through GitHub Actions.
-Running Locally
-Create and activate a Python virtual environment.
-Install dependencies:
+- 2024 reporting year
+- 52 state-level records
+
+### Zillow
+
+The home value pipeline uses Zillow's Home Value Index.
+
+Current data:
+
+- January 2000 through July 2026
+- 16,269 monthly state-level records
+
+## Tech Used
+
+- Python
+- Pandas
+- SQLAlchemy
+- Psycopg
+- PostgreSQL
+- Supabase
+- Streamlit
+- Altair
+- Git / GitHub
+- GitHub Actions
+- Census API
+- Zillow Research Data
+
+## Running the Project
+
+Install the required packages:
+
+```bash
 pip install -r requirements.txt
-Create a local .env file containing the required environment variables.
+```
+
+Create a `.env` file containing:
+
+```text
 CENSUS_API_KEY=
 DATABASE_URL=
-Run the complete pipeline:
+```
+
+Run the full ETL pipeline:
+
+```bash
 python run_pipeline.py
+```
 
-## What I Learned
-This project began as a basic housing-cost analysis and evolved into an end-to-end data engineering pipeline.
-Key areas explored while building the project included:
-Designing modular ETL architecture
-Working with multiple external data sources
-Building reusable database utilities
-Managing PostgreSQL from Python
-Implementing incremental data loading
-Detecting source-data freshness
-Moving a database workload from local PostgreSQL to cloud PostgreSQL
-Managing application secrets
-Creating scheduled CI/CD workflows
-Debugging differences between local and cloud execution environments
-Handling unreliable external APIs
+Run the dashboard:
 
-## Future Improvements
-Potential future enhancements include:
-Additional cost-of-living datasets,
-Fuel price data,
-City and ZIP-code level analysis,
-Data quality testing,
-Pipeline notifications,
-Automated analytics dashboards,
-Cloud-native deployment,
-Additional CI/CD testing
+```bash
+streamlit run app.py
+```
+
+## What I Took Away From It
+
+This project started as a simple idea for comparing housing costs. I ended up using it as a way to learn more about the engineering work that happens before data reaches a dashboard or analysis.
+
+The biggest thing I learned was how many pieces have to work together outside of the actual analysis. I worked through API extraction, data cleaning, validation, PostgreSQL loading, environment variables, cloud database connections, GitHub Actions, logging, and problems that only appeared once the code was running outside my local environment.
+
+AI was used throughout the project as a development and learning tool, particularly when I was working through unfamiliar data engineering concepts and debugging issues. I tried to use the project to understand why each part of the pipeline worked rather than treating generated code as a finished product.
+
+This was my first attempt at building a complete automated data pipeline from source data through a cloud database and into a usable dashboard.
